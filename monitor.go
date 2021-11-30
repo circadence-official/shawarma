@@ -7,7 +7,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -99,7 +99,7 @@ func monitorService(info *monitorInfo) error {
 			"endpoints",
 			info.Namespace,
 			fields.SelectorFromSet(fields.Set{
-				"metadata.name": info.ServiceName,
+				"metadata.label.shawarma": info.ServiceName,
 			}),
 		)
 
