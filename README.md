@@ -71,5 +71,5 @@ If specified both places, the command line takes precendence.
 | --log-level | LOG_LEVEL        | Set the log level (panic, fatal, error, warn, info, debug, trace) (default: "warn") |
 | --namespace | MY_POD_NAMESPACE | Kubernetes namespace, typically a fieldRef to `fieldPath: metadata.namespace` |
 | --pod       | MY_POD_NAME      | Kubernetes pod name, typically a fieldRef to `fieldPath: metadata.name` |
-| --service   | SHAWARMA_SERVICE | Name of the Kubernetes service to monitor |
+| --service   | SHAWARMA_SERVICE | Name of the Kubernetes service to monitor (more specifically the value of the `shawarma` label in the metadata of the service) |
 | --url       | SHAWARMA_URL     | URL which receives a POST on state change, default: <http://localhost/applicationstate> |
