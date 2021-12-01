@@ -31,6 +31,7 @@ metadata:
   name: shawarma-example
   labels:
     svc: shawarma-example
+    shawarma: shawarma-example
 spec:
   selector:
     app: shawarma-example

@@ -6,6 +6,7 @@ metadata:
   namespace: shawarma-example
   labels:
     svc: shawarma-example
+    shawarma: shawarma-example
 spec:
   selector:
     app: shawarma-example
