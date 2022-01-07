@@ -17,7 +17,7 @@ const (
 )
 
 type stateChangeDto struct {
-	Status string `json:"status"`
+	Status  string `json:"status"`
 	Service string `json:"service"`
 }
 
@@ -27,7 +27,7 @@ func notifyStateChange(info *monitorInfo, newStatus bool) error {
 	var err error
 
 	state := stateChangeDto{
-		Service: info.ServiceName,
+		Service: info.Name,
 	}
 
 	if newStatus {
@@ -54,7 +54,7 @@ func notifyStateChange(info *monitorInfo, newStatus bool) error {
 			defer resp.Body.Close()
 
 			log.WithFields(log.Fields{
-				"svc": info.ServiceName,
+				"label": info.Name,
 				"pod": info.PodName,
 				"ns":  info.Namespace,
 			}).Debug("Notification result ", resp.Status)
