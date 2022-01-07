@@ -7,21 +7,22 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Tracks if the pod is currently active
-var isActive = false
+// tracks the active status of each service
+var activeMap = make(map[string]bool)
 
 type monitorInfo struct {
 	Namespace    string
 	PodName      string
-	ServiceName  string
+	Name         string
 	URL          string
 	PathToConfig string
 }
@@ -45,16 +46,22 @@ func processEndpoint(info *monitorInfo, endpoint *v1.Endpoints) {
 		}
 	}
 
+	// try to get active status of service, default to false if not found
+	isActive, ok := activeMap[info.Name]
+	if !ok {
+		isActive = false
+	}
+
 	if (foundPod && !isActive) || (!foundPod && isActive) {
 		processStateChange(info, foundPod)
 	}
 }
 
 func processStateChange(info *monitorInfo, newState bool) {
-	isActive = newState
+	activeMap[info.Name] = newState
 
 	logContext := log.WithFields(log.Fields{
-		"svc": info.ServiceName,
+		"svc": info.Name,
 		"pod": info.PodName,
 		"ns":  info.Namespace,
 	})
@@ -94,13 +101,19 @@ func monitorService(info *monitorInfo) error {
 	}
 
 	for stopRequested := false; !stopRequested; {
-		watchList := cache.NewListWatchFromClient(
+		// This watch list is simply looking for a match between the provided service name and the label
+		// on the endpoint (e.g. "shawarma": "my-service"). By using the label on the endpoint as
+		// a map between the pod and endpoint, the sidecar is able to watch for changes in multiple
+		// endpoints all assigned to the same service. This is particularly helpful for deployment
+		// mechanisms such as Argo rollouts, where you have two endoints (e.g. my-service and my-service-preview)
+		// assigned to the same service.
+		watchList := cache.NewFilteredListWatchFromClient(
 			clientset.CoreV1().RESTClient(),
 			"endpoints",
 			info.Namespace,
-			fields.SelectorFromSet(fields.Set{
-				"metadata.name": info.ServiceName,
-			}),
+			func(options *metav1.ListOptions) {
+				options.LabelSelector = labels.SelectorFromSet(labels.Set(map[string]string{"shawarma.centeredge.io/service-label": info.Name})).String()
+			},
 		)
 
 		_, controller := cache.NewInformer(
@@ -110,24 +123,54 @@ func monitorService(info *monitorInfo) error {
 			cache.ResourceEventHandlerFuncs{
 				AddFunc: func(obj interface{}) {
 					endpoint := obj.(*v1.Endpoints)
+					notifierMonitorInfo := &monitorInfo{
+						Namespace:    info.Namespace,
+						PodName:      info.PodName,
+						Name:         endpoint.Name, // use endpoint name so that we get -preview/-canary instead of just base name
+						URL:          info.URL,
+						PathToConfig: info.PathToConfig,
+					}
 
 					log.Debugf("endpoint %s added", endpoint.Name)
-					processEndpoint(info, endpoint)
+
+					// default active status to false
+					activeMap[endpoint.Name] = false
+
+					processEndpoint(notifierMonitorInfo, endpoint)
 				},
 				DeleteFunc: func(obj interface{}) {
 					endpoint := obj.(*v1.Endpoints)
+					notifierMonitorInfo := &monitorInfo{
+						Namespace:    info.Namespace,
+						PodName:      info.PodName,
+						Name:         endpoint.Name, // use endpoint name so that we get -preview/-canary instead of just base name
+						URL:          info.URL,
+						PathToConfig: info.PathToConfig,
+					}
 
 					log.Debugf("endpoint %s deleted\n", endpoint.Name)
 
-					if isActive {
-						processStateChange(info, false)
+					if isActive, ok := activeMap[info.Name]; ok {
+						if isActive {
+							processStateChange(notifierMonitorInfo, false)
+						}
 					}
+
+					// delete from active map
+					delete(activeMap, endpoint.Name)
 				},
 				UpdateFunc: func(oldObj, newObj interface{}) {
 					endpoint := newObj.(*v1.Endpoints)
+					notifierMonitorInfo := &monitorInfo{
+						Namespace:    info.Namespace,
+						PodName:      info.PodName,
+						Name:         endpoint.Name, // use endpoint name so that we get -preview/-canary instead of just base name
+						URL:          info.URL,
+						PathToConfig: info.PathToConfig,
+					}
 
 					log.Debugf("endpoint %s changed\n", endpoint.Name)
-					processEndpoint(info, endpoint)
+					processEndpoint(notifierMonitorInfo, endpoint)
 				},
 			},
 		)

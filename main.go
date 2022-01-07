@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -60,20 +61,20 @@ func main() {
 			Usage:   "Monitor a Kubernetes service",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:   "service, svc",
-					Usage:  "Kubernetes service to monitor for this pod",
-					EnvVar: "SHAWARMA_SERVICE",
+					Name:   "label, l",
+					Usage:  "Will monitor endpoints/services that have this label value",
+					EnvVar: "ENDPOINT_LABEL",
 				},
 				cli.StringFlag{
 					Name:   "pod, p",
 					Usage:  "Kubernetes pod to monitor",
-					EnvVar: "MY_POD_NAME",
+					EnvVar: "POD_NAME",
 				},
 				cli.StringFlag{
 					Name:   "namespace, n",
 					Value:  "default",
 					Usage:  "Kubernetes namespace to monitor",
-					EnvVar: "MY_POD_NAMESPACE",
+					EnvVar: "NAMESPACE",
 				},
 				cli.StringFlag{
 					Name:   "url, u",
@@ -83,10 +84,18 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
+				name := c.String("label")
+				if name == "" {
+					return errors.New("label is required but was empty")
+				}
+				pod := c.String("pod")
+				if pod == "" {
+					return errors.New("pod is required but was empty")
+				}
 				info := monitorInfo{
 					Namespace:    c.String("namespace"),
-					PodName:      c.String("pod"),
-					ServiceName:  c.String("service"),
+					PodName:      pod,
+					Name:         name,
 					URL:          c.String("url"),
 					PathToConfig: c.GlobalString("kubeconfig"),
 				}

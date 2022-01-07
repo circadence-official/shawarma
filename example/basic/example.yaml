@@ -31,6 +31,8 @@ metadata:
   name: shawarma-example
   labels:
     svc: shawarma-example
+    # this is the label that the sidecar will monitor if it matches `metadata.annotations['shawarma.centeredge.io/service-label']`
+    shawarma: shawarma-example
 spec:
   selector:
     app: shawarma-example
@@ -56,7 +58,7 @@ spec:
         app: shawarma-example
         active: 'true'
       annotations:
-        shawarma.centeredge.io/service-name: shawarma-example
+        shawarma.centeredge.io/service-label: shawarma-example
     spec:
       serviceAccountName: shawarma-example
       containers:
@@ -66,20 +68,30 @@ spec:
           ports:
           - name: http
             containerPort: 80
+          resources:
+            requests:
+              cpu: "0.1"
+              memory: 128Mi
+            limits:
+              cpu: "0.2"
+              memory: 128Mi
         - name: shawarma
           # Using latest is not recommended for production, specify a version number
           image: centeredge/shawarma:latest
           env:
             - name: LOG_LEVEL
               value: DEBUG
-            - name: SHAWARMA_SERVICE
-              # References service to monitor
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.annotations['shawarma.centeredge.io/service-name']
             - name: SHAWARMA_URL
               # Will POST state to this URL as pod is attached/detached from the service
               value: http://localhost/applicationstate
+            - name: ENDPOINT_LABEL_KEY
+              # The label key on the Kubernetes service/endpoint to monitor
+              value: shawarma
+            - name: ENDPOINT_LABEL_VALUE
+              # The label value on the Kubernetes service/endpoint to monitor
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['shawarma.centeredge.io/service-label']
             - name: MY_POD_NAME
               valueFrom:
                 fieldRef:

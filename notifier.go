@@ -17,7 +17,8 @@ const (
 )
 
 type stateChangeDto struct {
-	Status string `json:"status"`
+	Status  string `json:"status"`
+	Service string `json:"service"`
 }
 
 var retryInterval, _ = time.ParseDuration("1s")
@@ -25,7 +26,9 @@ var retryInterval, _ = time.ParseDuration("1s")
 func notifyStateChange(info *monitorInfo, newStatus bool) error {
 	var err error
 
-	state := stateChangeDto{}
+	state := stateChangeDto{
+		Service: info.Name,
+	}
 
 	if newStatus {
 		state.Status = activeStatus
@@ -51,7 +54,7 @@ func notifyStateChange(info *monitorInfo, newStatus bool) error {
 			defer resp.Body.Close()
 
 			log.WithFields(log.Fields{
-				"svc": info.ServiceName,
+				"label": info.Name,
 				"pod": info.PodName,
 				"ns":  info.Namespace,
 			}).Debug("Notification result ", resp.Status)

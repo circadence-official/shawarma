@@ -11,7 +11,6 @@ This simplies deployment pipelines by providing a standarized Shawarma configura
 
 ## Usage
 
-To use, simply include a `shawarma.centeredge.io/service-name` annotation on a pod. This annotation should reference the service
-which should be monitored to determine application state. [See here for a full list of available annotations](https://github.com/CenterEdge/shawarma-webhook#annotations).
+To use, simply include a `shawarma.centeredge.io/service-label` annotation on a pod. This annotation should reference `fieldPath: metadata.label.shawarma` of the service which should be monitored to determine application state. [See here for a full list of available annotations](https://github.com/CenterEdge/shawarma-webhook#annotations).
 
 An example pod deployment can be found in (./test-pod.yaml).

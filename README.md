@@ -66,10 +66,10 @@ For detailed help:
 Most arguments can be specified either on the command line, or via an environment variable.
 If specified both places, the command line takes precendence.
 
-| Name        | Env Var          | Description |
-| ----------- | ---------------- | ----------- |
-| --log-level | LOG_LEVEL        | Set the log level (panic, fatal, error, warn, info, debug, trace) (default: "warn") |
-| --namespace | MY_POD_NAMESPACE | Kubernetes namespace, typically a fieldRef to `fieldPath: metadata.namespace` |
-| --pod       | MY_POD_NAME      | Kubernetes pod name, typically a fieldRef to `fieldPath: metadata.name` |
-| --service   | SHAWARMA_SERVICE | Name of the Kubernetes service to monitor |
-| --url       | SHAWARMA_URL     | URL which receives a POST on state change, default: <http://localhost/applicationstate> |
+| Name        | Env Var         | Description |
+| ----------- | --------------- | ----------- |
+| --log-level | LOG_LEVEL       | Set the log level (panic, fatal, error, warn, info, debug, trace) (default: `warn`) |
+| --namespace | NAMESPACE       | Kubernetes namespace, typically a fieldRef to `fieldPath: metadata.namespace` (default: `default`) |
+| --pod       | POD_NAME        | Kubernetes pod name, typically a fieldRef to `fieldPath: metadata.name` (no default) |
+| --label     | ENDPOINT_LABEL  | The label value on the Kubernetes service/endpoint to monitor, maps to the label key `shawarma.centeredge.io/service-label` (no default) |
+| --url       | SHAWARMA_URL    | URL which receives a POST request on state change (default: `http://localhost/applicationstate`) |

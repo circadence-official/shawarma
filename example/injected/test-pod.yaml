@@ -6,6 +6,7 @@ metadata:
   namespace: shawarma-example
   labels:
     svc: shawarma-example
+    shawarma: shawarma-example
 spec:
   selector:
     app: shawarma-example
@@ -33,7 +34,7 @@ spec:
         active: 'true'
       annotations:
         # Name of the service for Shawarma to monitor
-        shawarma.centeredge.io/service-name: shawarma-example
+        shawarma.centeredge.io/service-label: shawarma-example
         # Override Shawarma log level
         shawarma.centeredge.io/log-level: debug
     spec:
